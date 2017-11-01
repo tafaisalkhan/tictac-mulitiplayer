@@ -1,0 +1,66 @@
+<!--
+  Generated template for the GamePage page.
+
+  See http://ionicframework.com/docs/components/#navigation for more info on
+  Ionic pages and navigation.
+-->
+<ion-header>
+		<ion-navbar color="primary">
+				<ion-title>Game</ion-title>
+			</ion-navbar>
+		
+	</ion-header>
+
+<ion-content padding style="background-color: ivory;">
+
+
+		<ion-card>
+				<ion-item style="font-size: xx-large;">
+						
+						{{gameProvider.huPlayer}} : <span style="font-weight: 900;"> {{playerOneScore}}</span> 
+							 
+							<div  clear item-end>   {{gameProvider.aiPlayer}}: <span style="font-weight: 900;"> {{playerTwoScore}}</span> </div>
+						</ion-item>
+					
+				
+				</ion-card>
+
+<ion-card>
+		<ion-item >
+		
+	
+					<div  clear item-end *ngIf="!result">   <button ion-button small (click)="reStartGame()">Re-Start</button>
+					</div>
+				</ion-item>
+		<ion-card-content style="text-align: -webkit-center">
+	 <table [@listAnimation]="tableRow.length" (@listAnimation.done) = "listAnimationDone($event)" >
+		<tr	*ngFor="let row of tableRow; let rowIndex = index  " [@listAnimationCell]="tableCell.length">
+				<td	class="cell" *ngFor="let cell of tableCell; let  cellIndex = index;  " (click)="turnClick(rowIndex == 0 ? cell : rowIndex == 1 ? cell + rowIndex + 2  : cell + 6, $event) " id="{{rowIndex == 0 ? cell : rowIndex == 1 ? cell + rowIndex + 2  : cell + 6}}">
+					
+					</td>
+					
+
+		</tr>
+	
+	</table>
+
+	
+</ion-card-content>
+</ion-card>
+
+
+<ion-card [ngClass]="winner=='You win!'? 'displayWinGameOver' : 'displayLossGameOver'" [@visibilityGameOver] = "gameOverDiv" >
+	<ion-card-content>
+		<div  >
+				<div  style="font-size:-webkit-xxx-large"  >
+					{{winner}}
+					
+				</div>
+				<button ion-button [ngClass]="winner=='You win!'? 'winGameOverBtn' : 'lossGameOverBtn'" (click)="reStartGame()">Play Again</button>
+			</div>
+		</ion-card-content>
+
+</ion-card>
+
+
+</ion-content>

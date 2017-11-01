@@ -1,0 +1,4 @@
+node_modules/
+.sourcemaps/
+server/config/config.json
+www/

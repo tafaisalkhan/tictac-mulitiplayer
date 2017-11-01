@@ -1,0 +1,44 @@
+page-game {
+    .displayGameOver{
+        //display: none;
+        transform:translateY(-800%);
+        top: 50%;
+        position: absolute;
+        text-align: -webkit-center;
+        left: inherit;
+        //padding-top: 30px;;
+        height: 30%;
+      }
+
+      .displayWinGameOver{
+        //display: none;
+        transform:translateY(-800%);
+        top: 50%;
+        position: absolute;
+        text-align: -webkit-center;
+        left: inherit;
+        background-color: #32db64;
+        height: 30%;
+        //padding-top: 30px;;
+       
+      }
+
+      .displayLossGameOver{
+        //display: none;
+        transform:translateY(-800%);
+        top: 50%;
+        position: absolute;
+        text-align: -webkit-center;
+        left: inherit;
+        background-color: red;
+        height: 30%;
+        
+       
+      }
+      .winGameOverBtn{
+        background-color: #0077FF;
+      }
+      .lossGameOverBtn{
+        background-color: #00FF80;
+      }
+}
