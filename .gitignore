@@ -1,4 +1,6 @@
 node_modules/
 .sourcemaps/
+plugins/
+platforms/
 server/config/config.json
 www/
