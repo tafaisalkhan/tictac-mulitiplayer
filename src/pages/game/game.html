@@ -13,26 +13,41 @@
 
 <ion-content padding style="background-color: ivory;">
 
-
 		<ion-card>
-				<ion-item style="font-size: xx-large;">
+				<ion-item style="font-size: large;">
 						
-						{{gameProvider.huPlayer}} : <span style="font-weight: 900;"> {{playerOneScore}}</span> 
+						{{gameProvider.huUsername}} : <span style="font-weight: 900;"> {{gameProvider.huPlayer}}</span> 
 							 
-							<div  clear item-end>   {{gameProvider.aiPlayer}}: <span style="font-weight: 900;"> {{playerTwoScore}}</span> </div>
+							<div  clear item-end>   <span style="font-weight: 900;"> {{gameProvider.aiPlayer}}  </span> : {{gameProvider.aiUsername}}</div>
 						</ion-item>
-					
+				<ion-item style="font-size: large;">
+						
+						Win : <span style="font-weight: 900;"> {{playerOneScore}}</span> 
+								
+							<div  clear item-end>    <span style="font-weight: 900;"> {{playerTwoScore}}</span> : Win</div>
+						</ion-item>	
+			
+				<ion-item style="font-size: large;">
+						
+						Loss : <span style="font-weight: 900;"> {{playerOnelossScore}}</span> 
+								
+							<div  clear item-end>   <span style="font-weight: 900;"> {{playerTwoLossScore}}</span>  : Loss </div>
+						</ion-item>
 				
 				</ion-card>
 
-<ion-card>
+
+		
+
+<ion-card >
 		<ion-item >
 		
 	
-					<div  clear item-end *ngIf="!result">   <button ion-button small (click)="reStartGame()">Re-Start</button>
+					<div  clear item-end *ngIf="!result">   <button ion-button small (click)="reStartGame()" *ngIf="playerTrue">Re-Start</button>
 					</div>
 				</ion-item>
-		<ion-card-content style="text-align: -webkit-center">
+		<ion-card-content style="text-align: -webkit-center" >
+		
 	 <table [@listAnimation]="tableRow.length" (@listAnimation.done) = "listAnimationDone($event)" >
 		<tr	*ngFor="let row of tableRow; let rowIndex = index  " [@listAnimationCell]="tableCell.length">
 				<td	class="cell" *ngFor="let cell of tableCell; let  cellIndex = index;  " (click)="turnClick(rowIndex == 0 ? cell : rowIndex == 1 ? cell + rowIndex + 2  : cell + 6, $event) " id="{{rowIndex == 0 ? cell : rowIndex == 1 ? cell + rowIndex + 2  : cell + 6}}">
@@ -49,14 +64,31 @@
 </ion-card>
 
 
-<ion-card [ngClass]="winner=='You win!'? 'displayWinGameOver' : 'displayLossGameOver'" [@visibilityGameOver] = "gameOverDiv" >
+<ion-card style="margin-top:28px">   
+		<ion-card-content>
+		  <form [formGroup]="messageFrom" > 
+		  <ion-list>
+			<ion-item>
+			  <ion-input  type="text" formControlName="message" placeholder="Message" ></ion-input>
+			</ion-item>
+
+			</ion-list>
+		  </form>
+		  <button ion-button full (click)="sendMessage()" [disabled]="!messageFrom.valid">Send Message</button>
+		</ion-card-content>
+	  
+	  </ion-card>
+  
+
+
+<ion-card [ngClass]="true? 'displayWinGameOver' : 'displayLossGameOver'" [@visibilityGameOver] = "gameOverDiv" >
 	<ion-card-content>
 		<div  >
 				<div  style="font-size:-webkit-xxx-large"  >
 					{{winner}}
 					
 				</div>
-				<button ion-button [ngClass]="winner=='You win!'? 'winGameOverBtn' : 'lossGameOverBtn'" (click)="reStartGame()">Play Again</button>
+				<button ion-button [ngClass]="true? 'winGameOverBtn' : 'lossGameOverBtn'" (click)="reStartGame()">Play Again</button>
 			</div>
 		</ion-card-content>
 

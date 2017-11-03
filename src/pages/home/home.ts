@@ -2,6 +2,7 @@ import { Component, trigger, state, style, transition, animate, keyframes, group
 import { IonicPage, NavController, NavParams } from 'ionic-angular';
 import { GameProvider } from '../../providers/game/game';
 import { Media, MediaObject } from '@ionic-native/media';
+import {Validators, FormBuilder, FormGroup } from '@angular/forms';
 
 /**
  * Generated class for the HomePage page.
@@ -22,7 +23,15 @@ export class HomePage {
   selectType: number = 0;
   isPlay: boolean = false;
   file: MediaObject;
-  constructor( public navCtrl: NavController, public navParams: NavParams, public gameProvider:GameProvider, private media: Media) {
+  private user : FormGroup;
+
+  constructor(private formBuilder: FormBuilder, public navCtrl: NavController, public navParams: NavParams, public gameProvider:GameProvider, private media: Media) {
+  
+    this.user = this.formBuilder.group({
+      username: ['', Validators.required],
+      gameId: [''],
+    });
+  
   }
 
   ionViewDidLoad() {
@@ -36,9 +45,8 @@ export class HomePage {
 
 
   play(filename){
-    try{
-     
-      //this.file.release();
+    try{   
+      this.file.release();
     }
     catch(e){
 
@@ -58,7 +66,7 @@ export class HomePage {
     }
     
     ionViewWillLeave(){
-      //this.file.release();
+      this.file.release();
     }
   
 
@@ -68,6 +76,9 @@ export class HomePage {
 
 
   startGame(){
+    //console.log(this.user.controls.username.value);
+    this.play("tap.mp3")
+    this.gameProvider.huUsername = this.user.controls.username.value;
     this.navCtrl.push('GamePage');  
   }
 }

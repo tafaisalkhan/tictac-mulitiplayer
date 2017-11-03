@@ -4,12 +4,17 @@ import { IonicPage, NavController, NavParams } from 'ionic-angular';
 import { GameProvider } from '../../providers/game/game';
 import { Media, MediaObject } from '@ionic-native/media';
 import { LoadingController } from 'ionic-angular';
+import { Socket } from 'ng-socket-io';
+import { Observable } from 'rxjs/Observable';
+import { ToastController } from 'ionic-angular';
+import {Validators, FormBuilder, FormGroup } from '@angular/forms';
 /**
  * Generated class for the GamePage page.
  *
  * See https://ionicframework.com/docs/components/#navigation for more info on
  * Ionic pages and navigation.
  */
+
 @IonicPage()
 @Component({
   selector: 'page-game',
@@ -87,14 +92,16 @@ export class GamePage {
   result: Boolean = false;
   loading: Boolean = false;
   gameOverDiv: string = "hidden";
-  playerTrue:Boolean = false;
+  playerTrue:Boolean = true;
   playWin: any ;
   roomState: string;
   heightState: string = "fullHeight";
   showDiv: Boolean = true;
   roomWhiteState: string = "in";
   playerOneScore: number = 0;
+  playerOnelossScore:number = 0;
   playerTwoScore: number = 0;
+  playerTwoLossScore: number = 0;
   tie:boolean = true;
   normalGameAITrue: boolean = true;
   tieCount: number = 0;
@@ -102,21 +109,34 @@ export class GamePage {
   file: MediaObject;
   fileTic: MediaObject;
   loader: any;
-  constructor(public navCtrl: NavController, public navParams: NavParams, public gameProvider:GameProvider, private media: Media, public loadingCtrl: LoadingController) {
+  socketData; any;
+  valid: boolean = false;
+  private messageFrom : FormGroup;
+  constructor(private formBuilder: FormBuilder, public navCtrl: NavController, public navParams: NavParams, public gameProvider:GameProvider, private media: Media, public loadingCtrl: LoadingController, private socket: Socket, public toastCtrl: ToastController) {
+    this.messageFrom = this.formBuilder.group({
+      message: ['', Validators.required]
+    });
   }
 
   ionViewDidLoad() {
     console.log('ionViewDidLoad GamePage');
     this.cells = document.querySelectorAll('.cell');
     //console.log(this.cells);
+    this.presentLoading("Please wait ..")
     this.startGame();
     
   }
 
   reStartGame(){
+    this.playerTrue = false;
     this.tie = true;
     this.tableRow = [];
     this.tableCell = [];
+
+    this.socket.emit('restartGameByUser', {playerName: this.gameProvider.huUsername}, function (message, gameId) {
+      //alert('waiting for user');;
+    });
+
     setTimeout(() => {
       this. startGame();
       this.playerTrue = !this.playerTrue;
@@ -127,13 +147,102 @@ export class GamePage {
   ionViewWillLeave(){
     //this.file.release();
     //this.fileTic.release();
+    this.socket.disconnect();
   }
 
 ionViewWillEnter()
 {
-  
+  this.socket.on('connect', function () {
+  });
    
-  
+  this.socket.emit('join', {playerName: this.gameProvider.huUsername}, function (message, gameId) {
+    //alert('waiting for user');;
+  });
+
+
+  this.getWaitingForOpponent().subscribe(message =>  {
+    console.log(message);
+    this.hideLoading();
+    this.presentLoading("Waiting for your opponents...");
+    this.gameProvider.huPlayer = 'O';
+    //this.socketData = message;
+    //this.playerPosition = this.socketData.position;
+     
+  });
+  this.teamCompleted().subscribe(message =>  {
+    console.log(message);
+    this.hideLoading();
+    this.socketData = message;
+    for(var user of this.socketData.users){
+      if(user != this.gameProvider.huUsername){
+        this.gameProvider.aiUsername = user; 
+      }
+    }
+    if(this.gameProvider.huPlayer == undefined){
+      this.gameProvider.huPlayer = 'X'
+      this.gameProvider.aiPlayer = 'O'
+     
+      this.userTurnToast(this.gameProvider.aiUsername + " turn");
+    }
+    else if (this.gameProvider.huPlayer == 'O'){
+      this.gameProvider.aiPlayer = 'X'
+      this.userTurnToast("You Turn")
+      this.valid = true;
+    }
+    debugger;
+    
+    //this.socketData = message;
+    //this.playerPosition = this.socketData.position;
+    
+  });   
+
+  this.opponentMove().subscribe(message =>  {
+    console.log(message);
+    this.userTurnToast("Your Turn")
+    debugger;
+    this.socketData = message;
+    this.turnClickOpponent(this.socketData.position);
+   
+     
+  });   
+
+  this.restartGameByServer().subscribe(message =>  {
+    console.log(message);
+   
+    this.tie = true;
+    this.tableRow = [];
+    this.tableCell = [];
+    setTimeout(() => {
+      this.startGame();
+      this.playerTrue = !this.playerTrue;
+    }, 1000);
+  });   
+
+
+  this.broadcastUserMessage().subscribe(message =>  {
+    console.log(message);
+    this.socketData = message;
+    this.userMessage(this.socketData.message);
+    
+  });   
+}
+
+
+presentLoading(message) {
+  this.loader = this.loadingCtrl.create({
+    content: message,
+   
+    duration: 0
+  });
+  this.loader.present();
+}
+hideLoading() {
+  try{
+  this.loader.dismiss();
+  }
+  catch(e){
+
+  }
 }
 
   play(filename){
@@ -212,28 +321,18 @@ startGame(){
 }
 
 turnClick(id, element){
+  if(this.valid){
     if(!this.result && !this.loading){
-      //this.playTic("tap.mp3")
+      this.playTic("tap.mp3")
       if (typeof this.gameProvider.origBoard[id] == 'number') {
         if (!this.checkWin(this.gameProvider.origBoard, this.gameProvider.huPlayer)) {
-         
-          if(this.gameProvider.type == "double"){
-              if(this.playerTrue){
-                this.turn(id, this.gameProvider.huPlayer,element.srcElement )
-                this.playerTrue = !this.playerTrue;
+          this.valid = false;
+          this.userTurnToast(this.gameProvider.aiUsername + " turn")
+          this.socket.emit('playermove', {playerName: this.gameProvider.huUsername, itemId: id}, function (message, gameId) {
+            //alert('waiting for user');;
+          });       
+              this.turn(id, this.gameProvider.huPlayer,element )
 
-              }
-            else {           
-                this.turn(id, this.gameProvider.aiPlayer, element.srcElement)
-                this.playerTrue = !this.playerTrue;
-               
-              }
-           }
-
-            /*if(this.emptySquares().length == 0 && this.tie){
-              this.checkTie();
-            }
-            else*/ 
             if  (this.emptySquares().length == 0){
               this.checkTie();
             }
@@ -241,10 +340,41 @@ turnClick(id, element){
         }
       }
     }
+  }
+  else{
+   
+  }
 }
 
+turnClickOpponent(id){
+  if(!this.result && !this.loading){
+    this.playTic("tap.mp3")
+    if (typeof this.gameProvider.origBoard[id] == 'number') {
+      if (!this.checkWin(this.gameProvider.origBoard, this.gameProvider.huPlayer)) {
+        this.valid = true;
+          this.turnOpponent(id, this.gameProvider.aiPlayer );
+        if  (this.emptySquares().length == 0){
+            this.checkTie();
+          }
+      }
+    }
+  }
+}
 
 turn(squareId, player, element) {
+  try{
+    this.gameProvider.origBoard[squareId] = player;
+    //element.innerText = player;
+    document.getElementById(squareId).innerText = player;
+    let gameWon = this.checkWin(this.gameProvider.origBoard, player)
+    if (gameWon) this.gameOver(gameWon)
+  }
+  catch(e){
+
+  }
+}
+
+turnOpponent(squareId, player) {
   try{
     this.gameProvider.origBoard[squareId] = player;
     //element.innerText = player;
@@ -280,7 +410,7 @@ gameOver(gameWon) {
       let i: number = index;
       console.log(index);
       document.getElementById(index+"").style.backgroundColor =
-        gameWon.player == this.gameProvider.huPlayer ? "blue" : "red";
+        gameWon.player == this.gameProvider.huPlayer ? "blue" : "blue";
 
     }
     this.tie = false;
@@ -291,32 +421,22 @@ gameOver(gameWon) {
 declareWinner(who) {
   
      if(who == "You win!"){
-      if(this.gameProvider.type == "double"){
-        //this.play("win.mp3")
-        who = "Player 1 Win";
-       
-      }
-      else{
-       // this.play("win.mp3")
-       
-    }
+        who = this.gameProvider.huUsername +" Win";
         this.playerOneScore = this.playerOneScore + 1;
+        this.playerTwoLossScore = this.playerTwoLossScore + 1;
         this.tie = false;
+        this.userTurnToast(this.gameProvider.huUsername +" Win");
+
      }
      else if(who == "You lose."){
-      if(this.gameProvider.type == "double"){
-       // this.play("win.mp3")
-        who = "Player 2 Win";
-      }
-      else{
-        //this.play("loss.mp3")
-      }
-        
+        who = this.gameProvider.aiUsername + " Win";
         this.playerTwoScore = this.playerTwoScore + 1;
+        this.playerOnelossScore = this.playerOnelossScore + 1;
         this.tie = false;
+        this.userTurnToast(this.gameProvider.aiUsername +" Win");
      }
      
-    
+     this.play("win.mp3")
      this.winner = who
      this.result = true;
     
@@ -334,7 +454,7 @@ checkTie() {
         this.tie = true;
       }
     this.declareWinner("Tie Game!")
-    //this.play("loss.mp3")
+    this.play("loss.mp3")
     this.tieCount = this.tieCount + 1; 
     this.gameOverDiv = "shown";
       return true;
@@ -345,13 +465,87 @@ checkTie() {
 
 listAnimationDone(event){
   console.log(event.toState);
-  if(this.gameProvider.type != "double"){
-    if(event.toState == 3 && this.playerTrue){
-      this.turn(2, this.gameProvider.aiPlayer,null );
-    }
-  }
+  
 
   //
+}
+
+getWaitingForOpponent() {
+  let observable = new Observable(observer => {
+    this.socket.on('waitingForOpponent', (data) =>{
+      observer.next(data);
+    });
+  })
+  return observable;
+}
+
+teamCompleted() {
+  let observable = new Observable(observer => {
+    this.socket.on('teamCompleted', (message) =>  {
+      debugger;
+      observer.next(message);
+    });
+  })
+  return observable;
+}
+
+
+opponentMove() {
+  let observable = new Observable(observer => {
+    this.socket.on('opponentMove', (message) =>  {
+      debugger;
+      observer.next(message);
+    });
+  })
+  return observable;
+}
+
+restartGameByServer() {
+  let observable = new Observable(observer => {
+    this.socket.on('opponentRestartGame', (message) =>  {
+      debugger;
+      observer.next(message);
+    });
+  })
+  return observable;
+}
+
+
+broadcastUserMessage() {
+  let observable = new Observable(observer => {
+    this.socket.on('broadcastUserMessage', (message) =>  {
+      debugger;
+      observer.next(message);
+    });
+  })
+  return observable;
+}
+
+
+userTurnToast(message) {
+  let toast = this.toastCtrl.create({
+    message: message,
+    position: 'bottom'
+  });
+  toast.present();
+}
+
+userMessage(message) {
+  let toast = this.toastCtrl.create({
+    message: message,
+    position: 'top',
+    duration: 3000
+  });
+  toast.present();
+}
+
+sendMessage(){
+  console.log(this.messageFrom.controls.message.value);
+ this.socket.emit('sendMessage', {message: this.messageFrom.controls.message.value}, function (message, gameId) {
+  
+    //alert('waiting for user');;
+ });   
+ this.messageFrom.controls.message.setValue('');    
 }
 
 }

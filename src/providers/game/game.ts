@@ -9,10 +9,11 @@ import { Injectable } from '@angular/core';
 @Injectable()
 export class GameProvider {
   origBoard: number[]  = Array.from(Array(9).keys());
-  huPlayer: string = 'O';
-  aiPlayer: string = 'X';
+  huPlayer: string;
+  aiPlayer: string;
   type: string = 'double'
-  gameType: string = "easy";
+  huUsername: string;
+  aiUsername: string;
   winCombos = [
     [0, 1, 2],
     [3, 4, 5],
