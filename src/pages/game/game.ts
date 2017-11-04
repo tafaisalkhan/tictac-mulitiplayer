@@ -112,6 +112,9 @@ export class GamePage {
   socketData; any;
   valid: boolean = false;
   private messageFrom : FormGroup;
+  alreadyDisconnected: boolean = false;
+  toast: any;
+  toastMessage:any;
   constructor(private formBuilder: FormBuilder, public navCtrl: NavController, public navParams: NavParams, public gameProvider:GameProvider, private media: Media, public loadingCtrl: LoadingController, private socket: Socket, public toastCtrl: ToastController) {
     this.messageFrom = this.formBuilder.group({
       message: ['', Validators.required]
@@ -122,7 +125,7 @@ export class GamePage {
     console.log('ionViewDidLoad GamePage');
     this.cells = document.querySelectorAll('.cell');
     //console.log(this.cells);
-    this.presentLoading("Please wait ..")
+    this.presentLoading("Please wait ..", 0)
     this.startGame();
     
   }
@@ -145,16 +148,26 @@ export class GamePage {
   }
 
   ionViewWillLeave(){
-    //this.file.release();
+   //this.file.release();
     //this.fileTic.release();
-    this.socket.disconnect();
+    this.gameProvider.huPlayer = undefined;
+    this.gameProvider.aiPlayer = undefined;
+    if(!this.alreadyDisconnected){
+      this.socket.emit("forceDisconnect", function(err){
+
+      });
+    }
+    //this.socket.ioSocket.disconnect();
+    //this.socket.removeAllListeners();
   }
 
 ionViewWillEnter()
 {
-  this.socket.on('connect', function () {
-  });
-   
+ 
+  console.log('view enter');
+  //this.socket.on('connect', function () {
+  //});
+  this.socket.connect();
   this.socket.emit('join', {playerName: this.gameProvider.huUsername}, function (message, gameId) {
     //alert('waiting for user');;
   });
@@ -163,7 +176,7 @@ ionViewWillEnter()
   this.getWaitingForOpponent().subscribe(message =>  {
     console.log(message);
     this.hideLoading();
-    this.presentLoading("Waiting for your opponents...");
+    this.presentLoading("Waiting for your opponents...", 0);
     this.gameProvider.huPlayer = 'O';
     //this.socketData = message;
     //this.playerPosition = this.socketData.position;
@@ -200,6 +213,7 @@ ionViewWillEnter()
     console.log(message);
     this.userTurnToast("Your Turn")
     debugger;
+    this.valid = true;
     this.socketData = message;
     this.turnClickOpponent(this.socketData.position);
    
@@ -225,14 +239,36 @@ ionViewWillEnter()
     this.userMessage(this.socketData.message);
     
   });   
+
+
+  this.oppDisconnect().subscribe(message =>  {
+    //this.oppDisconnect().un.unsubscribe();
+    this.alreadyDisconnected = true;
+    //this.navCtrl.pop();
+    this.presentLoading("You opponent discounnect ..", 3000)
+    this.socket.emit('forceDisconnect', function (err) {
+      
+      });   
+    setTimeout(() => {
+      
+       try{
+        this.toast.dismiss();
+        //this.toastMessage.dismiss();
+        this.navCtrl.pop();
+       }
+       catch(e) {
+
+       }
+    }, 3000);
+    
+  });   
 }
 
 
-presentLoading(message) {
+presentLoading(message, duration) {
   this.loader = this.loadingCtrl.create({
     content: message,
-   
-    duration: 0
+    duration: duration
   });
   this.loader.present();
 }
@@ -268,7 +304,7 @@ hideLoading() {
         this.file.release()} 
 
     );
-     // this.file.play();
+      this.file.play();
      
   }
   playTic(filename){
@@ -293,7 +329,7 @@ hideLoading() {
         this.fileTic.release()} 
 
     );
-      //this.fileTic.play();
+      this.fileTic.play();
      
   }
 
@@ -323,7 +359,7 @@ startGame(){
 turnClick(id, element){
   if(this.valid){
     if(!this.result && !this.loading){
-      this.playTic("tap.mp3")
+      //this.playTic("tap.mp3")
       if (typeof this.gameProvider.origBoard[id] == 'number') {
         if (!this.checkWin(this.gameProvider.origBoard, this.gameProvider.huPlayer)) {
           this.valid = false;
@@ -348,7 +384,7 @@ turnClick(id, element){
 
 turnClickOpponent(id){
   if(!this.result && !this.loading){
-    this.playTic("tap.mp3")
+    //this.playTic("tap.mp3")
     if (typeof this.gameProvider.origBoard[id] == 'number') {
       if (!this.checkWin(this.gameProvider.origBoard, this.gameProvider.huPlayer)) {
         this.valid = true;
@@ -436,7 +472,7 @@ declareWinner(who) {
         this.userTurnToast(this.gameProvider.aiUsername +" Win");
      }
      
-     this.play("win.mp3")
+    //this.play("win.mp3")
      this.winner = who
      this.result = true;
     
@@ -454,7 +490,7 @@ checkTie() {
         this.tie = true;
       }
     this.declareWinner("Tie Game!")
-    this.play("loss.mp3")
+    //this.play("loss.mp3")
     this.tieCount = this.tieCount + 1; 
     this.gameOverDiv = "shown";
       return true;
@@ -523,20 +559,20 @@ broadcastUserMessage() {
 
 
 userTurnToast(message) {
-  let toast = this.toastCtrl.create({
+  this.toast = this.toastCtrl.create({
     message: message,
     position: 'bottom'
   });
-  toast.present();
+  this.toast.present();
 }
 
 userMessage(message) {
-  let toast = this.toastCtrl.create({
+  this.toastMessage = this.toastCtrl.create({
     message: message,
     position: 'top',
     duration: 3000
   });
-  toast.present();
+  this.toastMessage.present();
 }
 
 sendMessage(){
@@ -547,5 +583,21 @@ sendMessage(){
  });   
  this.messageFrom.controls.message.setValue('');    
 }
+
+
+oppDisconnect(){
+  let observable = new Observable(observer => {
+    this.socket.on('oppDisconnect', (message) =>  {
+      debugger;
+      observer.next(message);
+      observer.unsubscribe();
+      
+    });
+  })
+  return observable;
+
+   
+}
+
 
 }

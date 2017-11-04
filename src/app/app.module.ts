@@ -10,6 +10,9 @@ import { MyApp } from './app.component';
 import { HomePage } from '../pages/home/home';
 import { GameProvider } from '../providers/game/game';
 import { GamelogicProvider } from '../providers/gamelogic/gamelogic';
+import { SocketIoModule, SocketIoConfig } from 'ng-socket-io';
+//const config: SocketIoConfig = { url: 'http://localhost:3000', options: {'forceNew':true } };
+const config: SocketIoConfig = { url: 'http://vast-peak-65625.herokuapp.com/', options: {} };
 
 @NgModule({
   declarations: [
@@ -19,7 +22,8 @@ import { GamelogicProvider } from '../providers/gamelogic/gamelogic';
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
-    IonicModule.forRoot(MyApp)
+    IonicModule.forRoot(MyApp),
+    SocketIoModule.forRoot(config)
   ],
   bootstrap: [IonicApp],
   entryComponents: [
