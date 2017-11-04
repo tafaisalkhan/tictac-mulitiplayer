@@ -46,7 +46,7 @@ export class HomePage {
 
   play(filename){
     try{   
-     // this.file.release();
+      this.file.release();
     }
     catch(e){
 
@@ -66,7 +66,7 @@ export class HomePage {
     }
     
     ionViewWillLeave(){
-      //this.file.release();
+      this.file.release();
     }
   
 
@@ -77,7 +77,7 @@ export class HomePage {
 
   startGame(){
     //console.log(this.user.controls.username.value);
-    //this.play("tap.mp3")
+    this.play("tap.mp3")
     this.gameProvider.huUsername = this.user.controls.username.value;
     this.navCtrl.push('GamePage');  
   }

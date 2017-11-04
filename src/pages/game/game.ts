@@ -148,8 +148,8 @@ export class GamePage {
   }
 
   ionViewWillLeave(){
-   //this.file.release();
-    //this.fileTic.release();
+    this.file.release();
+    this.fileTic.release();
     this.gameProvider.huPlayer = undefined;
     this.gameProvider.aiPlayer = undefined;
     if(!this.alreadyDisconnected){
@@ -359,7 +359,7 @@ startGame(){
 turnClick(id, element){
   if(this.valid){
     if(!this.result && !this.loading){
-      //this.playTic("tap.mp3")
+      this.playTic("tap.mp3")
       if (typeof this.gameProvider.origBoard[id] == 'number') {
         if (!this.checkWin(this.gameProvider.origBoard, this.gameProvider.huPlayer)) {
           this.valid = false;
@@ -384,7 +384,7 @@ turnClick(id, element){
 
 turnClickOpponent(id){
   if(!this.result && !this.loading){
-    //this.playTic("tap.mp3")
+   this.playTic("tap.mp3")
     if (typeof this.gameProvider.origBoard[id] == 'number') {
       if (!this.checkWin(this.gameProvider.origBoard, this.gameProvider.huPlayer)) {
         this.valid = true;
@@ -472,7 +472,7 @@ declareWinner(who) {
         this.userTurnToast(this.gameProvider.aiUsername +" Win");
      }
      
-    //this.play("win.mp3")
+     this.play("win.mp3")
      this.winner = who
      this.result = true;
     
@@ -490,7 +490,7 @@ checkTie() {
         this.tie = true;
       }
     this.declareWinner("Tie Game!")
-    //this.play("loss.mp3")
+    this.play("loss.mp3")
     this.tieCount = this.tieCount + 1; 
     this.gameOverDiv = "shown";
       return true;
